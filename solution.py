@@ -67,8 +67,12 @@ class Solver:
         """
         # !!! In order to ensure compatibility with tester, you should not modify this method !!!
         self.vi_initialise()
-        while not self.vi_is_converged():
+        while True:
             self.vi_iteration()
+
+            # NOTE: vi_iteration is always called before vi_is_converged
+            if self.vi_is_converged():
+                break
 
     def vi_get_state_value(self, state: State):
         """
@@ -141,8 +145,12 @@ class Solver:
         """
         # !!! In order to ensure compatibility with tester, you should not modify this method !!!
         self.pi_initialise()
-        while not self.pi_is_converged():
+        while True:
             self.pi_iteration()
+
+            # NOTE: pi_iteration is always called before pi_is_converged
+            if self.pi_is_converged():
+                break
 
     def pi_select_action(self, state: State):
         """
