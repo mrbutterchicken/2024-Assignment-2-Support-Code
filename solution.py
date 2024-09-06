@@ -24,6 +24,14 @@ class Solver:
         #
         pass
 
+    @staticmethod
+    def testcases_to_attempt():
+        """
+        Return a list of testcase numbers you want your solution to be evaluated for.
+        """
+        # TODO: modify below if desired (e.g. disable larger testcases if you're having problems with RAM usage, etc)
+        return [1, 2, 3, 4, 5, 6]
+
     # === Value Iteration ==============================================================================================
 
     def vi_initialise(self):
