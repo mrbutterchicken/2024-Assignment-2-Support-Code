@@ -19,6 +19,10 @@ class Solver:
 
     def __init__(self, environment: Environment):
         self.environment = environment
+        self._values: dict[State, float] = {} # State: Reward
+        self._policy: dict[State, int] = {} # State: Action
+        self._vi_converged: bool = False
+        self._pi_converged: bool = False
         #
         # TODO: Define any class instance variables you require (e.g. dictionary mapping state to VI value) here.
         #
@@ -39,10 +43,11 @@ class Solver:
         Initialise any variables required before the start of Value Iteration.
         """
         #
-        # TODO: Implement any initialisation for Value Iteration (e.g. building a list of states) here. You should not
-        #  perform value iteration in this method.
+        # TODO: Implement any initialisation for Value Iteration (e.g. building a list of states) here. 
+        # You should not perform value iteration in this method.
         #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
+        # In order to ensure compatibility with tester, you should avoid adding 
+        # additional arguments to this function.
         #
         pass
 
@@ -67,6 +72,7 @@ class Solver:
         #
         # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
         #
+        
         pass
 
     def vi_plan_offline(self):
@@ -89,8 +95,8 @@ class Solver:
         :return: V(s)
         """
         #
-        # TODO: Implement code to return the value V(s) for the given state (based on your stored VI values) here. If a
-        #  value for V(s) has not yet been computed, this function should return 0.
+        # TODO: Implement code to return the value V(s) for the given state (based on your stored VI values) here. 
+        # If a value for V(s) has not yet been computed, this function should return 0.
         #
         # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
         #
@@ -174,9 +180,7 @@ class Solver:
         pass
 
     # === Helper Methods ===============================================================================================
-    #
-    #
-    # TODO: Add any additional methods here
-    #
-    #
+
+    def get_transition_outcomes(self, state: State, action: int) -> list[tuple]:
+        pass
 
