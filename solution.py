@@ -96,8 +96,6 @@ class Solver:
         """
         Perform a single iteration of Value Iteration (i.e. loop over the state space once).
         """
-        # new_values = {}
-        # new_policy = {}
         maxdiff = 0
         for state in self._states:
             value = -float('inf')
@@ -116,14 +114,9 @@ class Solver:
             self._values[state] = value
             self._policy[state] = action
 
-        # diffs = [
-        #     abs(self._values[s] - new_values[s]) for s in self._states
-        # ]
         if maxdiff < self.environment.epsilon:
             self._vi_converged = True
 
-        # self._values = new_values
-        # self._policy = new_policy
 
 
     def vi_plan_offline(self):
@@ -145,12 +138,6 @@ class Solver:
         :param state: the current state
         :return: V(s)
         """
-        #
-        # TODO: Implement code to return the value V(s) for the given state (based on your stored VI values) here. 
-        # If a value for V(s) has not yet been computed, this function should return 0.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
         return self._values.get(state, 0)
 
     def vi_select_action(self, state: State):
@@ -159,11 +146,6 @@ class Solver:
         :param state: the current state
         :return: optimal action for the given state (element of ROBOT_ACTIONS)
         """
-        #
-        # TODO: Implement code to return the optimal action for the given state (based on your stored VI values) here.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
         return self._policy[state]
 
     # === Policy Iteration =============================================================================================
