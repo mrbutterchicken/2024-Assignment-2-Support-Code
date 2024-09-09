@@ -38,17 +38,13 @@ class Solver:
         self._policy: dict[State, int] = {} # State: Action
         self._vi_converged: bool = False
         self._pi_converged: bool = False
-        #
-        # TODO: Define any class instance variables you require (e.g. dictionary mapping state to VI value) here.
-        #
-        pass
 
     @staticmethod
     def testcases_to_attempt():
         """
         Return a list of testcase numbers you want your solution to be evaluated for.
         """
-        return [1, 2, 3, 4, 5, 6]
+        return [1, 2, 4]
 
     # === Value Iteration ==============================================================================================
 
