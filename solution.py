@@ -3,6 +3,7 @@ import time
 from constants import *
 from environment import *
 from state import State
+import numpy as np
 """
 solution.py
 
@@ -14,39 +15,30 @@ COMP3702 2022 Assignment 2 Support Code
 
 """
 
-class Node:
-    def __init__(self, state: State, action_from_parent: int, parent) -> None:
-        self.state = state
-        self.action_from_parent = action_from_parent
-        self.parent = parent
-
-    # def __str__(self) -> str:
-    #     return str((self.cost, self.state))
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Node):
-            return (self.state == other.state)
-        else:
-            return False
-
 class Solver:
 
     def __init__(self, environment: Environment):
         self.environment = environment
         self._states: list[State] = []
+        self._state_index: dict[int, State] = {}
+
         self.vi_values: dict[State, float] = {} # State: Reward
-        self.vi_policy: dict[State, int] = {} # State: Action
+        self._policy: dict[State, int] = {} # State: Action
+        self._policy_vector = None
+
+        self._rewards = None
+
         self._vi_converged: bool = False
         self._pi_converged: bool = False
+
+        self._transition_model: np.ndarray = None
 
     @staticmethod
     def testcases_to_attempt():
         """
         Return a list of testcase numbers you want your solution to be evaluated for.
         """
-        return [1, 2, 4]
-
-    # === Value Iteration ==============================================================================================
+        return [1, 2, 3, 4, 5, 6]
 
     def expand(self, state: State) -> list[State]:
         expanded: list[State] = []
@@ -59,14 +51,11 @@ class Solver:
                 expanded.append(next_state)
         return expanded
 
-    def vi_initialise(self):
-        """
-        Initialise any variables required before the start of Value Iteration.
-        """
-        self._states = list()
+    def get_all_states(self) -> None:
         init = self.environment.get_init_state()
         frontier: list[State] = [init]
         visited: list[State] = list()
+
         while len(frontier):
             state = frontier.pop()
 
@@ -77,9 +66,18 @@ class Solver:
 
         visited.reverse()
         self._states = visited
+        self._states.append(self.environment.exited_state)
+
+    # === Value Iteration ==============================================================================================
+
+    def vi_initialise(self):
+        """
+        Initialise any variables required before the start of Value Iteration.
+        """
+        self.get_all_states()
 
         self.vi_values = {state: 0 for state in self._states}
-        self.vi_policy = {state: BEE_ACTIONS[0] for state in self._states}
+        self._policy = {state: BEE_ACTIONS[0] for state in self._states}
 
     def vi_is_converged(self):
         """
@@ -108,12 +106,10 @@ class Solver:
             if abs(value - self.vi_values[state]) > maxdiff:
                 maxdiff = abs(value - self.vi_values[state])
             self.vi_values[state] = value
-            self.vi_policy[state] = action
+            self._policy[state] = action
 
         if maxdiff < self.environment.epsilon:
             self._vi_converged = True
-
-
 
     def vi_plan_offline(self):
         """
@@ -142,7 +138,7 @@ class Solver:
         :param state: the current state
         :return: optimal action for the given state (element of ROBOT_ACTIONS)
         """
-        return self.vi_policy[state]
+        return self._policy[state]
 
     # === Policy Iteration =============================================================================================
 
@@ -150,37 +146,99 @@ class Solver:
         """
         Initialise any variables required before the start of Policy Iteration.
         """
-        #
-        # TODO: Implement any initialisation for Policy Iteration (e.g. building a list of states) here. You should not
-        #  perform policy iteration in this method. You should assume an initial policy of always move FORWARDS.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
-        pass
+        # start = time.time()
+        self.get_all_states()
+        # self._policy = {state: BEE_ACTIONS[0] for state in self._states}
+        self._policy_vector = np.zeros([len(self._states)], dtype=np.int64)
+
+        self._state_index = {s: i for i, s in enumerate(self._states)}
+
+        # ----- TRANSITION MODEL: Prob(State[i] x Action[j] ==> State[k]) -----
+        self._transition_model = np.zeros([
+            len(self._states), 
+            len(BEE_ACTIONS), 
+            len(self._states)
+        ])
+        for i, s in enumerate(self._states):
+            for j, a in enumerate(BEE_ACTIONS):
+                for prob, next_state, _ in self.get_transition_outcomes(s, a):
+                    self._transition_model[i][j][self._state_index[next_state]] += prob
+
+        # --------- REWARD MATRIX MODEL: Reward(State[i] x Action[j]) ---------
+        self._rewards = np.zeros([
+            len(self._states),
+            len(BEE_ACTIONS)
+        ])
+        for i, s in enumerate(self._states):
+            for j, a in enumerate(BEE_ACTIONS):
+                self._rewards[i][j] = self.get_expected_reward(s, a)
+
+        # end = time.time()
+        # print(f"Policy Iteration initialisation took {end-start} seconds.")
 
     def pi_is_converged(self):
         """
         Check if Policy Iteration has reached convergence.
         :return: True if converged, False otherwise
         """
-        #
-        # TODO: Implement code to check if Policy Iteration has reached convergence here.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
-        pass
+        return self._pi_converged
+
+    def policy_evaluation(self) -> dict[State, float]:
+        # Find slice of transition model representing current policy:
+        state_numbers = np.array(range(len(self._states)))
+        # s = time.time()
+        P = self._transition_model[state_numbers, self._policy_vector]
+        # se = time.time()
+        # print(f"Slicing transition took {se-s} seconds.")
+
+        # Calculate reward vector:
+        # s = time.time()
+        # rewards: np.ndarray = np.zeros([len(self._states)])
+        # for i, state in enumerate(self._states):
+        #     rewards[i] = self.get_expected_reward(state, self._policy_vector[i])
+        rewards = self._rewards[state_numbers, self._policy_vector]
+        # se = time.time()
+        # print(f"Slicing reward matrix took {se-s} seconds.")
+
+        # s = time.time()
+        values = np.linalg.solve(
+            np.identity(len(self._states)) - (self.environment.gamma * P), rewards
+        )
+        # se = time.time()
+        # print(f"Linear algebra solve took {se-s} seconds.")
+
+        # Return a map of states to values --> numerical evaluation of policy
+        return {state: values[i] for i, state in enumerate(self._states)}
+
+    def policy_improvement(self, values: dict[State, float]) -> None:
+        changed = False
+        print("Improving policy...")
+        for i, state in enumerate(self._states):
+            value = -float('inf')
+            action = None
+            for a in BEE_ACTIONS:
+                ts: list[tuple] = self.get_transition_outcomes(state, a)
+                Q = sum([
+                    prob * (reward + self.environment.gamma * values[next_state])
+                    for prob, next_state, reward in ts
+                ])
+                if Q > value:
+                    value = Q
+                    action = a
+            if action != self._policy_vector[i]:
+                self._policy_vector[i] = action
+                changed = True
+
+        if not changed:
+            self._pi_converged = True
 
     def pi_iteration(self):
         """
         Perform a single iteration of Policy Iteration (i.e. perform one step of policy evaluation and one step of
         policy improvement).
         """
-        #
-        # TODO: Implement code to perform a single iteration of Policy Iteration (evaluation + improvement) here.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
-        pass
+        V_pi = self.policy_evaluation()
+        self.policy_improvement(V_pi)
 
     def pi_plan_offline(self):
         """
@@ -201,12 +259,7 @@ class Solver:
         :param state: the current state
         :return: optimal action for the given state (element of ROBOT_ACTIONS)
         """
-        #
-        # TODO: Implement code to return the optimal action for the given state (based on your stored PI policy) here.
-        #
-        # In order to ensure compatibility with tester, you should avoid adding additional arguments to this function.
-        #
-        pass
+        return self._policy_vector[self._state_index[state]]
 
     # === Helper Methods ===============================================================================================
 
@@ -252,3 +305,8 @@ class Solver:
 
         return outcomes
 
+    def get_expected_reward(self, state: State, action: int) -> float:
+        expected_reward = 0
+        for p, _, r in self.get_transition_outcomes(state, action):
+            expected_reward += p * r
+        return expected_reward
