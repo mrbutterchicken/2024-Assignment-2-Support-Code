@@ -34,8 +34,8 @@ class Solver:
     def __init__(self, environment: Environment):
         self.environment = environment
         self._states: list[State] = []
-        self._values: dict[State, float] = {} # State: Reward
-        self._policy: dict[State, int] = {} # State: Action
+        self.vi_values: dict[State, float] = {} # State: Reward
+        self.vi_policy: dict[State, int] = {} # State: Action
         self._vi_converged: bool = False
         self._pi_converged: bool = False
 
@@ -78,8 +78,8 @@ class Solver:
         visited.reverse()
         self._states = visited
 
-        self._values = {state: 0 for state in self._states}
-        self._policy = {state: BEE_ACTIONS[0] for state in self._states}
+        self.vi_values = {state: 0 for state in self._states}
+        self.vi_policy = {state: BEE_ACTIONS[0] for state in self._states}
 
     def vi_is_converged(self):
         """
@@ -99,16 +99,16 @@ class Solver:
             for a in BEE_ACTIONS:
                 ts: list[tuple] = self.get_transition_outcomes(state, a)
                 Q = sum([
-                    t[0] * (t[2] + self.environment.gamma * self._values.get(t[1], 0))
+                    t[0] * (t[2] + self.environment.gamma * self.vi_values.get(t[1], 0))
                     for t in ts
                 ])
                 if Q > value:
                     value = Q
                     action = a
-            if abs(value - self._values[state]) > maxdiff:
-                maxdiff = abs(value - self._values[state])
-            self._values[state] = value
-            self._policy[state] = action
+            if abs(value - self.vi_values[state]) > maxdiff:
+                maxdiff = abs(value - self.vi_values[state])
+            self.vi_values[state] = value
+            self.vi_policy[state] = action
 
         if maxdiff < self.environment.epsilon:
             self._vi_converged = True
@@ -134,7 +134,7 @@ class Solver:
         :param state: the current state
         :return: V(s)
         """
-        return self._values.get(state, 0)
+        return self.vi_values.get(state, 0)
 
     def vi_select_action(self, state: State):
         """
@@ -142,7 +142,7 @@ class Solver:
         :param state: the current state
         :return: optimal action for the given state (element of ROBOT_ACTIONS)
         """
-        return self._policy[state]
+        return self.vi_policy[state]
 
     # === Policy Iteration =============================================================================================
 
