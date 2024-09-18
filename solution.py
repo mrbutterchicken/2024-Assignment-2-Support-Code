@@ -53,8 +53,21 @@ class Solver:
                 expanded.append(next_state)
         return expanded
     
-    def get_a_goal_state(self) -> State:
+    def get_ideal_start_state(self) -> State:
+        thorns = False
+        for row in self.environment.thorn_map:
+            for col in row:
+                if col:
+                    thorns = True
+                    break
+            if thorns:
+                break
+
         init = self.environment.get_init_state()
+        if not thorns:
+            print('no thorns')
+            return init
+
         frontier: list[State] = [init]
         visited: list[State] = [init]
 
@@ -93,14 +106,14 @@ class Solver:
         Initialise any variables required before the start of Value Iteration.
         """
         start = time.time()
-        self.get_all_states(starting=self.get_a_goal_state())
+        self.get_all_states(starting=self.get_ideal_start_state())
 
-        # self.vi_values = {state: 0 for state in self._states}
-        for state in self._states:
-            if self.environment.is_solved(state):
-                self.vi_values[state] = 1
-            else:
-                self.vi_values[state] = 0
+        self.vi_values = {state: 0 for state in self._states}
+        # for state in self._states:
+        #     if self.environment.is_solved(state):
+        #         self.vi_values[state] = 0
+        #     else:
+        #         self.vi_values[state] = 0
         self._policy = {state: BEE_ACTIONS[0] for state in self._states}
         end = time.time()
         print(f'Initialising took {round(end-start, 4)} seconds.')
@@ -118,8 +131,8 @@ class Solver:
         """
         maxdiff = 0
         for state in self._states:
-            if self.environment.is_solved(state):
-                continue
+            # if self.environment.is_solved(state):
+            #     continue
             value = -float('inf')
             action = None
             for a in BEE_ACTIONS:
@@ -211,35 +224,18 @@ class Solver:
         return self._pi_converged
 
     def policy_evaluation(self) -> dict[State, float]:
-        # Find slice of transition model representing current policy:
         state_numbers = np.array(range(len(self._states)))
-        # s = time.time()
+
         P = self._transition_model[state_numbers, self._policy_vector]
-        # se = time.time()
-        # print(f"Slicing transition matrix took {se-s} seconds.")
-
-        # Calculate reward vector:
-        # s = time.time()
-        # rewards: np.ndarray = np.zeros([len(self._states)])
-        # for i, state in enumerate(self._states):
-        #     rewards[i] = self.get_expected_reward(state, self._policy_vector[i])
         rewards = self._rewards[state_numbers, self._policy_vector]
-        # se = time.time()
-        # print(f"Slicing reward matrix took {se-s} seconds.")
 
-        # s = time.time()
         values = np.linalg.solve(
             np.identity(len(self._states)) - (self.environment.gamma * P), rewards
         )
-        # se = time.time()
-        # print(f"Linear algebra solve took {se-s} seconds.")
-
-        # Return a map of states to values --> numerical evaluation of policy
         return {state: values[i] for i, state in enumerate(self._states)}
 
     def policy_improvement(self, values: dict[State, float]) -> None:
         changed = False
-        print("Improving policy...")
         for i, state in enumerate(self._states):
             value = -float('inf')
             action = None
@@ -292,8 +288,6 @@ class Solver:
 
     def get_transition_outcomes(self, state: State, action: int) -> list[tuple[float, State, float]]:
 
-        # if state == self.environment.exited_state:
-        #     return [(1, self.environment.exited_state, 0)]
         if self.environment.is_solved(state):
             return [(1, state, 0)]
 
@@ -306,11 +300,11 @@ class Solver:
         C = self.environment.drift_cw_probs[action]
         CC = self.environment.drift_ccw_probs[action]
 
-        c_drift = C * (1-D) * (1-CC)
-        cc_drift = CC * (1-D) * (1-C)
+        c_drift = C * (1-D) # * (1-CC)
+        cc_drift = CC * (1-D) # * (1-C)
         double_only = D * (1-C) * (1-CC)
-        c_d_dub = C*D * (1-CC)
-        cc_d_dub = CC*D * (1-C)
+        c_d_dub = C*D # * (1-CC)
+        cc_d_dub = CC*D # * (1-C)
         desired = 1 - (c_drift + cc_drift + double_only + c_d_dub + cc_d_dub)
 
         movements: list[tuple[float, list[int]]] = [
@@ -325,20 +319,17 @@ class Solver:
         for prob, moves in movements:
             min_reward = 0
             new_state = state
-            if prob > 0:
-                for m in moves:
-                    reward, new_state = self.environment.apply_dynamics(new_state, m)
-                    # use the minimum reward over all movements
-                    if reward < min_reward:
-                        min_reward = reward
-                outcomes.append((prob, new_state, min_reward))
+            for m in moves:
+                reward, new_state = self.environment.apply_dynamics(new_state, m)
+                # use the minimum reward over all movements
+                if reward < min_reward:
+                    min_reward = reward
+            outcomes.append((prob, new_state, min_reward))
 
         self._transition_cache[(state, action)] = outcomes
         return outcomes
 
     def get_expected_reward(self, state: State, action: int) -> float:
-        if self.environment.is_solved(state):
-            return 1
         return sum(
             [p*r for p, _, r in self.get_transition_outcomes(state, action)]
         )
