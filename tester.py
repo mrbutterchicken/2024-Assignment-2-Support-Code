@@ -485,9 +485,9 @@ def run_test_mp(filename_i_vis):
            f'--> Score: {round(reward_score, 1)} / {REWARD_POINTS}'
     msg3 = f'Time Elapsed: {t_offline},    Target: {control_env.offline_time_tgt}  ' \
            f'--> Score: {round(timing_score, 1)} / {TIMING_POINTS}'
-    msg4 = f'Iterations Performed: {iterations},    Target: {control_env.iterations_tgt}  ' \
+    msg4 = f'{'\033[91m'}Iterations Performed: {iterations},    Target: {control_env.iterations_tgt}  ' \
            f'--> Score: {round(iterations_score, 1)} / {ITERATIONS_POINTS}'
-    msg5 = f'\nTestcase total score: {tc_total_score} / {POINTS_PER_TESTCASE}'
+    msg5 = f'{'\033[00m'}\nTestcase total score: {tc_total_score} / {POINTS_PER_TESTCASE}'
     test_result = {"score": tc_total_score,
                    "max_score": POINTS_PER_TESTCASE,
                    "output": (msg0 + '\n' + msg1 + '\n' + msg2 + '\n' + msg3 + '\n' + msg4 + '\n' +
