@@ -53,8 +53,26 @@ class Solver:
                 expanded.append(next_state)
         return expanded
     
+<<<<<<< Updated upstream
     def get_a_goal_state(self) -> State:
         init = self.environment.get_init_state()
+=======
+    def get_ideal_start_state(self) -> State:
+        # thorns = False
+        # for row in self.environment.thorn_map:
+        #     for col in row:
+        #         if col:
+        #             thorns = True
+        #             break
+        #     if thorns:
+        #         break
+
+        init = self.environment.get_init_state()
+        # if not thorns:
+        #     # print('no thorns')
+        #     return init
+
+>>>>>>> Stashed changes
         frontier: list[State] = [init]
         visited: list[State] = [init]
 
@@ -95,10 +113,17 @@ class Solver:
         start = time.time()
         self.get_all_states(starting=self.get_a_goal_state())
 
+<<<<<<< Updated upstream
         # self.vi_values = {state: 0 for state in self._states}
         for state in self._states:
             if self.environment.is_solved(state):
                 self.vi_values[state] = 1
+=======
+        self.vi_values = {state: 0 for state in self._states}
+        for state in self._states:
+            if self.environment.is_solved(state):
+                self.vi_values[state] = 0
+>>>>>>> Stashed changes
             else:
                 self.vi_values[state] = 0
         self._policy = {state: BEE_ACTIONS[0] for state in self._states}
@@ -125,7 +150,7 @@ class Solver:
             for a in BEE_ACTIONS:
                 ts: list[tuple] = self.get_transition_outcomes(state, a)
                 Q = sum([
-                    t[0] * (t[2] + self.environment.gamma * self.vi_values[t[1]])
+                    t[0] * (t[2] + (1/self.environment.gamma) * self.vi_values[t[1]])
                     for t in ts
                 ])
                 if Q > value:
@@ -215,6 +240,7 @@ class Solver:
         state_numbers = np.array(range(len(self._states)))
         # s = time.time()
         P = self._transition_model[state_numbers, self._policy_vector]
+<<<<<<< Updated upstream
         # se = time.time()
         # print(f"Slicing transition matrix took {se-s} seconds.")
 
@@ -228,6 +254,9 @@ class Solver:
         # print(f"Slicing reward matrix took {se-s} seconds.")
 
         # s = time.time()
+=======
+        rewards = self._rewards[state_numbers, self._policy_vector]
+>>>>>>> Stashed changes
         values = np.linalg.solve(
             np.identity(len(self._states)) - (self.environment.gamma * P), rewards
         )
@@ -239,7 +268,11 @@ class Solver:
 
     def policy_improvement(self, values: dict[State, float]) -> None:
         changed = False
+<<<<<<< Updated upstream
         print("Improving policy...")
+=======
+        print('Improving policy...')
+>>>>>>> Stashed changes
         for i, state in enumerate(self._states):
             value = -float('inf')
             action = None
