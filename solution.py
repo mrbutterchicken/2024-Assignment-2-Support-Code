@@ -53,19 +53,19 @@ class Solver:
         return expanded
     
     def get_ideal_start_state(self) -> State:
-        thorns = False
-        for row in self.environment.thorn_map:
-            for col in row:
-                if col:
-                    thorns = True
-                    break
-            if thorns:
-                break
+        # thorns = False
+        # for row in self.environment.thorn_map:
+        #     for col in row:
+        #         if col:
+        #             thorns = True
+        #             break
+        #     if thorns:
+        #         break
 
         init = self.environment.get_init_state()
-        if not thorns:
-            print('no thorns')
-            return init
+        # if not thorns:
+        #     print('no thorns')
+        #     return init
 
         frontier: list[State] = [init]
         visited: list[State] = [init]
@@ -132,7 +132,7 @@ class Solver:
             for a in BEE_ACTIONS:
                 ts: list[tuple] = self.get_transition_outcomes(state, a)
                 Q = sum([
-                    t[0] * (t[2] + self.environment.gamma * self.vi_values[t[1]])
+                    t[0] * (t[2] + (self.environment.gamma) * self.vi_values[t[1]])
                     for t in ts
                 ])
                 if Q > value:
