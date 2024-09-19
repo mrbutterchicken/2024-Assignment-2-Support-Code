@@ -1,5 +1,4 @@
 import sys
-import time
 from constants import *
 from environment import *
 from state import State
@@ -105,7 +104,6 @@ class Solver:
         """
         Initialise any variables required before the start of Value Iteration.
         """
-        start = time.time()
         self.get_all_states(starting=self.get_ideal_start_state())
 
         self.vi_values = {state: 0 for state in self._states}
@@ -115,8 +113,6 @@ class Solver:
         #     else:
         #         self.vi_values[state] = 0
         self._policy = {state: BEE_ACTIONS[0] for state in self._states}
-        end = time.time()
-        print(f'Initialising took {round(end-start, 4)} seconds.')
 
     def vi_is_converged(self):
         """
@@ -131,8 +127,6 @@ class Solver:
         """
         maxdiff = 0
         for state in self._states:
-            # if self.environment.is_solved(state):
-            #     continue
             value = -float('inf')
             action = None
             for a in BEE_ACTIONS:
@@ -187,9 +181,7 @@ class Solver:
         """
         Initialise any variables required before the start of Policy Iteration.
         """
-        # start = time.time()
         self.get_all_states(starting=self.environment.get_init_state())
-        # self._policy = {state: BEE_ACTIONS[0] for state in self._states}
         self._policy_vector = np.zeros([len(self._states)], dtype=np.int64)
         self._state_index = {s: i for i, s in enumerate(self._states)}
 
@@ -212,9 +204,6 @@ class Solver:
         for i, s in enumerate(self._states):
             for j, a in enumerate(BEE_ACTIONS):
                 self._rewards[i][j] = self.get_expected_reward(s, a)
-
-        # end = time.time()
-        # print(f"Policy Iteration initialisation took {end-start} seconds.")
 
     def pi_is_converged(self):
         """
@@ -309,11 +298,11 @@ class Solver:
 
         movements: list[tuple[float, list[int]]] = [
             (desired, [action]),
-            (c_drift, [SPIN_CW, action]),
-            (cc_drift, [SPIN_CCW, action]),
+            (c_drift, [SPIN_RIGHT, action]),
+            (cc_drift, [SPIN_LEFT, action]),
             (double_only, [action, action]),
-            (c_d_dub, [SPIN_CW, action, action]),
-            (cc_d_dub, [SPIN_CCW, action, action])
+            (c_d_dub, [SPIN_RIGHT, action, action]),
+            (cc_d_dub, [SPIN_LEFT, action, action])
         ]
 
         for prob, moves in movements:
