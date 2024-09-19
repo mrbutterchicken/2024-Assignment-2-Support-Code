@@ -106,14 +106,9 @@ class Solver:
         Initialise any variables required before the start of Value Iteration.
         """
         start = time.time()
-        self.get_all_states(starting=self.get_a_goal_state())
+        self.get_all_states(starting=self.get_ideal_start_state())
 
         self.vi_values = {state: 0 for state in self._states}
-        for state in self._states:
-            if self.environment.is_solved(state):
-                self.vi_values[state] = 0
-            else:
-                self.vi_values[state] = 0
         self._policy = {state: BEE_ACTIONS[0] for state in self._states}
         end = time.time()
         print(f'Initialising took {round(end-start, 4)} seconds.')
@@ -188,7 +183,7 @@ class Solver:
         Initialise any variables required before the start of Policy Iteration.
         """
         # start = time.time()
-        self.get_all_states(starting=self.environment.get_init_state())
+        self.get_all_states(starting=self.get_ideal_start_state())
         # self._policy = {state: BEE_ACTIONS[0] for state in self._states}
         self._policy_vector = np.zeros([len(self._states)], dtype=np.int64)
         self._state_index = {s: i for i, s in enumerate(self._states)}
@@ -307,11 +302,11 @@ class Solver:
         C = self.environment.drift_cw_probs[action]
         CC = self.environment.drift_ccw_probs[action]
 
-        c_drift = C * (1-D) * (1-CC)
-        cc_drift = CC * (1-D) * (1-C)
+        c_drift = C * (1-D) # * (1-CC)
+        cc_drift = CC * (1-D) # * (1-C)
         double_only = D * (1-C) * (1-CC)
-        c_d_dub = C*D * (1-CC)
-        cc_d_dub = CC*D * (1-C)
+        c_d_dub = C*D # * (1-CC)
+        cc_d_dub = CC*D # * (1-C)
         desired = 1 - (c_drift + cc_drift + double_only + c_d_dub + cc_d_dub)
 
         movements: list[tuple[float, list[int]]] = [
@@ -338,8 +333,6 @@ class Solver:
         return outcomes
 
     def get_expected_reward(self, state: State, action: int) -> float:
-        if self.environment.is_solved(state):
-            return 1
         return sum(
             [p*r for p, _, r in self.get_transition_outcomes(state, action)]
         )
