@@ -51,33 +51,6 @@ class Solver:
             if next_state != state:
                 expanded.append(next_state)
         return expanded
-    
-    def get_ideal_start_state(self) -> State:
-        # thorns = False
-        # for row in self.environment.thorn_map:
-        #     for col in row:
-        #         if col:
-        #             thorns = True
-        #             break
-        #     if thorns:
-        #         break
-
-        init = self.environment.get_init_state()
-        # if not thorns:
-        #     print('no thorns')
-        #     return init
-
-        frontier: list[State] = [init]
-        visited: list[State] = [init]
-
-        while len(frontier):
-            state = frontier.pop()
-            if self.environment.is_solved(state):
-                return state
-            for child in self.expand(state):
-                if child not in visited:
-                    visited.append(child)
-                    frontier.append(child)
 
     def get_all_states(self, starting: State) -> None:
         init = starting
@@ -86,8 +59,6 @@ class Solver:
 
         while len(frontier):
             state = frontier.pop()
-            if self.environment.is_solved(state):
-                self._solved_states.append(state)
 
             for child in self.expand(state):
                 if child not in visited:
@@ -104,14 +75,9 @@ class Solver:
         """
         Initialise any variables required before the start of Value Iteration.
         """
-        self.get_all_states(starting=self.get_ideal_start_state())
+        self.get_all_states(starting=self.environment.get_init_state())
 
         self.vi_values = {state: 0 for state in self._states}
-        # for state in self._states:
-        #     if self.environment.is_solved(state):
-        #         self.vi_values[state] = 0
-        #     else:
-        #         self.vi_values[state] = 0
         self._policy = {state: BEE_ACTIONS[0] for state in self._states}
 
     def vi_is_converged(self):
@@ -127,6 +93,8 @@ class Solver:
         """
         maxdiff = 0
         for state in self._states:
+            if self.environment.is_solved(state):
+                continue
             value = -float('inf')
             action = None
             for a in BEE_ACTIONS:

@@ -43,8 +43,8 @@ class Environment:
         self.force_valid = force_valid
         f = open(filename, 'r')
 
-        # EXITED STATE
-        self.exited_state = State(self, (-1, -1), 0, (), (), force_valid=False)
+        # # EXITED STATE
+        # self.exited_state = State(self, (-1, -1), 0, (), (), force_valid=False)
 
         # environment dimensions
         self.n_rows = None
